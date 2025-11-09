@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Experience Assistant - AI Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-light: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+        }
+
+        .status-dot.disconnected {
+            background: var(--danger);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .user-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        /* Main Chat Area */
+        .chat-container {
+            flex: 1;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            max-width: 85%;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.system {
+            align-self: center;
+            max-width: 70%;
+        }
+
+        .message.full-width {
+            max-width: 100%;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+
+        .message.system .message-avatar {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .message-content {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .message.system .message-content {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            text-align: center;
+        }
+
+        /* Experience Cards */
+        .experience-cards-container {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .experience-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .experience-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(99, 102, 241, 0.2);
+        }
+
+        .experience-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .experience-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .category-badge {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--primary);
+            color: white;
+            white-space: nowrap;
+        }
+
+        .experience-card-description {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .experience-card-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .meta-icon {
+            font-size: 14px;
+        }
+
+        .similarity-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--success);
+            margin-top: 12px;
+        }
+
+        .sales-pitch {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        .urgency-tag {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--warning);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .thinking-indicator {
+            display: flex;
+            gap: 6px;
+            padding: 8px 0;
+        }
+
+        .thinking-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Input Area */
+        .input-area {
+            border-top: 1px solid var(--border);
+            padding: 20px;
+            background: var(--bg-dark);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
+            width: 100%;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            resize: none;
+            max-height: 120px;
+            transition: border-color 0.2s;
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        #messageInput::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border);
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            min-height: 400px;
+        }
+
+        .welcome-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+        }
+
+        .welcome-screen h2 {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .welcome-screen p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            max-width: 500px;
+        }
+
+        .quick-prompts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 24px;
+        }
+
+        .quick-prompt {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .quick-prompt:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .quick-prompt-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .quick-prompt-text {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Stats Panel */
+        .stats {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .header {
+                padding: 16px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .message {
+                max-width: 95%;
+            }
+
+            .experience-cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .input-wrapper {
+                flex-wrap: wrap;
+            }
+
+            .quick-prompts {
+                grid-template-columns: 1fr;
+            }
+
+            .experience-card-meta {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 Sales Experience Assistant</h1>
+            <p>Your AI-powered sales companion - Text-based chat interface</p>
+            
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot disconnected" id="connectionStatus"></div>
+                    <span id="connectionText">Disconnected</span>
+                </div>
+                
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <div class="user-avatar">👤</div>
+                    <span id="userId">User</span>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat">
+                        <span>💬</span>
+                        <span id="messageCount">0 messages</span>
+                    </div>
+                    <div class="stat">
+                        <span>⏱️</span>
+                        <span id="sessionTime">00:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+            <div class="messages" id="messagesContainer">
+                <!-- Welcome Screen -->
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-icon">👋</div>
+                    <h2>Welcome to Sales Experience Assistant!</h2>
+                    <p>I'm your professional sales consultant ready to recommend amazing experiences. Let's find something perfect for you!</p>
+                    
+                    <div class="quick-prompts">
+                        <div class="quick-prompt" onclick="sendQuickPrompt('Show me adventure experiences')">
+                            <div class="quick-prompt-icon">🏔️</div>
+                            <div class="quick-prompt-text">Adventure Experiences</div>
+                        </div>
+                        <div class="quick-prompt" onclick="sendQuickPrompt('Looking for relaxing getaways')">
+                            <div class="quick-prompt-icon">🏖️</div>
+                            <div class="quick-prompt-text">Relaxing Getaways</div>
+                        </div>
+                        <div class="quick-prompt" onclick="sendQuickPrompt('Cultural experiences in India')">
+                            <div class="quick-prompt-icon">🕌</div>
+                            <div class="quick-prompt-text">Cultural Tours</div>
+                        </div>
+                        <div class="quick-prompt" onclick="sendQuickPrompt('Luxury experiences under 50000')">
+                            <div class="quick-prompt-icon">✨</div>
+                            <div class="quick-prompt-text">Luxury Options</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <div class="input-container">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="Tell me what kind of experience you're looking for..."
+                            rows="1"
+                        ></textarea>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">
+                        <span>📤</span>
+                        <span>Send</span>
+                    </button>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-secondary" onclick="clearChat()">
+                        <span>🗑️</span>
+                        <span>Clear Chat</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="getStats()">
+                        <span>📊</span>
+                        <span>View Stats</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const WS_URL = 'ws://localhost:8000/ws/chat/';
+        
+        // Generate unique client ID
+        let clientId = localStorage.getItem('salesChatClientId');
+        if (!clientId) {
+            clientId = 'client_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('salesChatClientId', clientId);
+        }
+
+        // State
+        let ws = null;
+        let isConnected = false;
+        let messageCount = 0;
+        let sessionStartTime = Date.now();
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 5;
+
+        // Elements
+        const messagesContainer = document.getElementById('messagesContainer');
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionText = document.getElementById('connectionText');
+        const messageCountEl = document.getElementById('messageCount');
+        const sessionTimeEl = document.getElementById('sessionTime');
+        const userInfo = document.getElementById('userInfo');
+        const userIdEl = document.getElementById('userId');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            connectWebSocket();
+            startSessionTimer();
+            setupInputHandlers();
+        });
+
+        // WebSocket Connection
+        function connectWebSocket() {
+            if (isConnected || reconnectAttempts >= maxReconnectAttempts) return;
+
+            reconnectAttempts++;
+            console.log(`🔄 Connecting... (Attempt ${reconnectAttempts})`);
+
+            try {
+                ws = new WebSocket(WS_URL + clientId);
+
+                ws.onopen = () => {
+                    console.log('✅ Connected to server');
+                    isConnected = true;
+                    reconnectAttempts = 0;
+                    updateConnectionStatus(true);
+                    updateUserInfo(clientId);
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log('📨 Received:', data);
+                    handleServerMessage(data);
+                };
+
+                ws.onerror = (error) => {
+                    console.error('❌ WebSocket error:', error);
+                };
+
+                ws.onclose = () => {
+                    console.log('🔌 Disconnected from server');
+                    isConnected = false;
+                    updateConnectionStatus(false);
+                    
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
+                        console.log(`⏳ Reconnecting in ${delay/1000}s...`);
+                        setTimeout(connectWebSocket, delay);
+                    } else {
+                        addMessage('system', '❌ Connection failed. Please refresh the page.');
+                    }
+                };
+            } catch (error) {
+                console.error('Connection error:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Handle Server Messages
+        function handleServerMessage(data) {
+            switch (data.type) {
+                case 'system':
+                    addMessage('system', data.message);
+                    break;
+                
+                case 'typing':
+                    showThinkingIndicator();
+                    break;
+                
+                case 'response':
+                    removeThinkingIndicator();
+                    
+                    // Add text message
+                    if (data.message) {
+                        addMessage('assistant', data.message);
+                    }
+                    
+                    // Add experience cards if available
+                    if (data.experiences && data.experiences.experiences) {
+                        addExperienceCards(data.experiences.experiences);
+                    }
+                    break;
+                
+                case 'error':
+                    removeThinkingIndicator();
+                    addMessage('assistant', '⚠️ ' + data.message);
+                    break;
+                
+                case 'stats':
+                    removeThinkingIndicator();
+                    displayStats(data.data);
+                    break;
+            }
+        }
+
+        // Update Connection Status
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                connectionStatus.classList.remove('disconnected');
+                connectionStatus.classList.add('connected');
+                connectionText.textContent = 'Connected';
+            } else {
+                connectionStatus.classList.remove('connected');
+                connectionStatus.classList.add('disconnected');
+                connectionText.textContent = 'Disconnected';
+            }
+        }
+
+        // Update User Info
+        function updateUserInfo(userId) {
+            const shortId = userId.length > 12 ? userId.substring(0, 12) + '...' : userId;
+            userIdEl.textContent = shortId;
+            userInfo.style.display = 'flex';
+        }
+
+        // Add Message to Chat
+        function addMessage(role, content) {
+            if (welcomeScreen && welcomeScreen.style.display !== 'none') {
+                welcomeScreen.style.display = 'none';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = role === 'user' ? '👤' : role === 'assistant' ? '🎯' : '⚙️';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Update message count for user messages
+            if (role === 'user') {
+                messageCount++;
+                messageCountEl.textContent = `${messageCount} message${messageCount !== 1 ? 's' : ''}`;
+            }
+        }
+
+        // Add Experience Cards
+        function addExperienceCards(experiences) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant full-width';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = '🎯';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.style.width = '100%';
+            contentDiv.style.maxWidth = 'none';
+            
+            const cardsContainer = document.createElement('div');
+            cardsContainer.className = 'experience-cards-container';
+            
+            experiences.forEach(exp => {
+                const card = createExperienceCard(exp);
+                cardsContainer.appendChild(card);
+            });
+            
+            contentDiv.appendChild(cardsContainer);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Create Experience Card
+        function createExperienceCard(exp) {
+            const card = document.createElement('div');
+            card.className = 'experience-card';
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'experience-card-header';
+            
+            const title = document.createElement('div');
+            title.className = 'experience-card-title';
+            title.textContent = exp.title || 'Amazing Experience';
+            
+            const badge = document.createElement('div');
+            badge.className = 'category-badge';
+            badge.textContent = exp.category || 'Experience';
+            
+            header.appendChild(title);
+            header.appendChild(badge);
+            card.appendChild(header);
+            
+            // Description
+            if (exp.description) {
+                const desc = document.createElement('div');
+                desc.className = 'experience-card-description';
+                desc.textContent = exp.description;
+                card.appendChild(desc);
+            }
+            
+            // Meta Information
+            const meta = document.createElement('div');
+            meta.className = 'experience-card-meta';
+            
+            const metaItems = [
+                { icon: '📍', text: `Location: ${exp.location || 'TBD'}` },
+                { icon: '💰', text: `Budget: ₹${exp.budget || 'Contact for price'}` }
+            ];
+            
+            metaItems.forEach(item => {
+                const metaItem = document.createElement('div');
+                metaItem.className = 'meta-item';
+                metaItem.innerHTML = `<span class="meta-icon">${item.icon}</span><span>${item.text}</span>`;
+                meta.appendChild(metaItem);
+            });
+            
+            card.appendChild(meta);
+            
+            // Sales Pitch
+            if (exp.sales_pitch || exp.why_perfect) {
+                const pitch = document.createElement('div');
+                pitch.className = 'sales-pitch';
+                pitch.innerHTML = `<strong>💡 Why This is Perfect:</strong> ${exp.sales_pitch || exp.why_perfect}`;
+                card.appendChild(pitch);
+            }
+            
+            // Similarity Score
+            if (exp.similarity_score) {
+                const similarity = document.createElement('div');
+                similarity.className = 'similarity-badge';
+                similarity.innerHTML = `<span>🎯</span> <span>Match Score: <strong>${exp.similarity_score}%</strong></span>`;
+                card.appendChild(similarity);
+            }
+            
+            // Urgency Tag
+            if (exp.urgency_factor) {
+                const urgency = document.createElement('div');
+                urgency.className = 'urgency-tag';
+                urgency.innerHTML = `⚠️ ${exp.urgency_factor}`;
+                card.appendChild(urgency);
+            }
+            
+            return card;
+        }
+
+        // Show Thinking Indicator
+        function showThinkingIndicator() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            messageDiv.id = 'thinkingIndicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = '🎯';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'thinking-indicator';
+            
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'thinking-dot';
+                thinkingDiv.appendChild(dot);
+            }
+            
+            contentDiv.appendChild(thinkingDiv);
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Remove Thinking Indicator
+        function removeThinkingIndicator() {
+            const thinkingIndicator = document.getElementById('thinkingIndicator');
+            if (thinkingIndicator) {
+                thinkingIndicator.remove();
+            }
+        }
+
+        // Display Stats
+        function displayStats(stats) {
+            const statsMessage = `📊 Conversation Statistics:\n\n` +
+                               `• Total Messages: ${stats.total_messages || 0}\n` +
+                               `• Session Count: ${stats.session_count || 1}\n` +
+                               `• Known Interests: ${stats.known_interests || 0}\n` +
+                               `• Previously Discussed: ${stats.previously_discussed || 0}\n` +
+                               `• First Interaction: ${stats.first_interaction ? new Date(stats.first_interaction).toLocaleDateString() : 'Today'}`;
+            
+            addMessage('assistant', statsMessage);
+        }
+
+        // Send Message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            if (!isConnected) {
+                addMessage('system', '❌ Not connected to server. Attempting to reconnect...');
+                connectWebSocket();
+                return;
+            }
+            
+            // Add user message to UI
+            addMessage('user', message);
+            
+            // Clear input
+            messageInput.value = '';
+            adjustTextareaHeight();
+            
+            // Send via WebSocket
+            console.log('📤 Sending:', message);
+            ws.send(JSON.stringify({
+                type: 'chat',
+                message: message,
+                client_id: clientId,
+                timestamp: new Date().toISOString()
+            }));
+        }
+
+        // Send Quick Prompt
+        function sendQuickPrompt(prompt) {
+            messageInput.value = prompt;
+            sendMessage();
+        }
+
+        // Setup Input Handlers
+        function setupInputHandlers() {
+            messageInput.addEventListener('input', adjustTextareaHeight);
+            
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        // Adjust Textarea Height
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+        }
+
+        // Clear Chat
+        function clearChat() {
+            if (!confirm('Are you sure you want to clear the chat history?')) {
+                return;
+            }
+            
+            // Remove all messages except welcome screen
+            while (messagesContainer.firstChild) {
+                messagesContainer.removeChild(messagesContainer.firstChild);
+            }
+            
+            // Re-add welcome screen
+            messagesContainer.appendChild(welcomeScreen);
+            welcomeScreen.style.display = 'flex';
+            
+            // Reset message count
+            messageCount = 0;
+            messageCountEl.textContent = '0 messages';
+            
+            // Send clear command to server
+            if (isConnected) {
+                ws.send(JSON.stringify({
+                    type: 'clear_memory',
+                    client_id: clientId
+                }));
+            }
+        }
+
+        // Get Stats
+        function getStats() {
+            if (!isConnected) {
+                addMessage('system', '❌ Not connected to server. Cannot retrieve stats.');
+                return;
+            }
+            
+            ws.send(JSON.stringify({
+                type: 'get_stats',
+                client_id: clientId
+            }));
+            
+            showThinkingIndicator();
+        }
+
+        // Session Timer
+        function startSessionTimer() {
+            setInterval(() => {
+                const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                sessionTimeEl.textContent = `${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        // Handle page visibility for reconnection
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && !isConnected) {
+                console.log('🔄 Page visible, attempting reconnection...');
+                reconnectAttempts = 0;
+                connectWebSocket();
+            }
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (ws && isConnected) {
+                ws.close();
+            }
+        });
+    </script>
+</body>
+</html>
