@@ -1,367 +1,460 @@
-# Sales Experience Chatbot with Memory 🎯
+# 🎯 BookAwestruck - AI Experience Recommendation Chatbot
 
-A professional AI-powered sales chatbot with persistent conversation memory using Google Gemini and local Sentence Transformers for embeddings.
-
-## Features ✨
-
-- **🆓 Free Embeddings**: Uses local Sentence Transformers (no API costs!)
-- **💾 Persistent Memory**: Remembers all conversations across sessions
-- **🎯 Smart Recommendations**: Vector-based semantic search
-- **🤝 Sales Expertise**: 15 years of professional sales techniques
-- **👤 User Profiling**: Tracks interests, budget, and preferences
-- **⚡ Real-time**: WebSocket for instant bidirectional communication
-- **🔒 Private**: All embeddings computed locally
-
-## Project Structure 📁
-
-```
-sales-chatbot/
-├── data_processor.py            # Data loading and vector DB
-├── sales_chatbot.py             # AI brain with memory
-├── websocket_manager.py         # Connection management
-├── main.py                      # FastAPI application
-├── requirements.txt             # Python dependencies
-├── .env                         # Environment variables
-├── .env.example                 # Environment template
-├── experiences_dataset_large.csv # Experience data
-├── chroma_db/                   # Vector database (auto-created)
-└── conversation_memory/         # Conversation storage (auto-created)
-```
-
-## Setup Instructions 🚀
-
-### 1. Prerequisites
-
-- Python 3.9 or higher
-- Google Gemini API Key ([Get one here](https://makersuite.google.com/app/apikey))
-
-### 2. Installation
-
-```bash
-# Clone or download the project
-cd sales-chatbot
-
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On Mac/Linux:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-**First Run Note**: Sentence Transformers will download the model (~80MB) automatically. This only happens once!
-
-### 3. Configuration
-
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit .env and add your Gemini API key
-```
-
-Add your API key to `.env`:
-```
-GEMINI_API_KEY=your_actual_api_key_here
-```
-
-### 4. Prepare Data
-
-Create `experiences_dataset_large.csv` with these columns:
-
-| Column | Description | Example |
-|--------|-------------|---------|
-| id | Unique identifier | 1 |
-| title | Experience name | "Beach Paradise" |
-| description | Detailed description | "Relaxing beach resort..." |
-| category | Category | Adventure, Relaxation, etc. |
-| location | Location name | Goa, Kerala, etc. |
-| budget | Price in ₹ | 15000 |
-
-Example CSV:
-```csv
-id,title,description,category,location,budget
-1,Beach Paradise,"Relaxing beach resort with spa",Relaxation,Goa,15000
-2,Mountain Trek,"Thrilling Himalayan adventure",Adventure,Himachal,25000
-3,Cultural Tour,"Explore ancient temples",Culture,Rajasthan,12000
-```
-
-### 5. Run the Server
-
-```bash
-# Start the server
-python main.py
-```
-
-Output:
-```
-🚀 Starting Sales Experience Chatbot Server...
-💡 Using Sentence Transformers (all-MiniLM-L6-v2) for embeddings
-🤖 Loading Sentence Transformer model: all-MiniLM-L6-v2
-✅ Model loaded successfully!
-📊 No data found. Loading and processing CSV...
-✅ Data successfully loaded into ChromaDB
-🎉 SYSTEM READY
-INFO:     Uvicorn running on http://0.0.0.0:8000
-```
-
-## API Endpoints 🔌
-
-### WebSocket
-- **URL**: `ws://localhost:8000/ws/chat/{client_id}`
-- **Description**: Real-time chat connection
-
-### REST Endpoints
-- **Root**: `GET /`
-- **Health Check**: `GET /health`
-- **Get Stats**: `GET /api/stats/{client_id}`
-- **Clear Memory**: `POST /api/clear_memory/{client_id}`
-
-## WebSocket Message Format 💬
-
-### Send Message (Client → Server)
-```json
-{
-  "type": "chat",
-  "message": "I'm looking for adventure experiences in Goa"
-}
-```
-
-### Receive Response (Server → Client)
-```json
-{
-  "type": "response",
-  "message": "Based on your interest in adventure...",
-  "experiences": {
-    "experiences": [
-      {
-        "id": "exp_123",
-        "title": "Beach Adventure",
-        "category": "Adventure",
-        "location": "Goa",
-        "budget": "15000",
-        "description": "...",
-        "similarity_score": 95.5
-      }
-    ]
-  },
-  "timestamp": "2024-11-09T10:30:00"
-}
-```
-
-## Testing the Chatbot 🧪
-
-### Using Python WebSocket Client
-
-```python
-import asyncio
-import websockets
-import json
-
-async def test_chat():
-    uri = "ws://localhost:8000/ws/chat/test_user_123"
-    
-    async with websockets.connect(uri) as websocket:
-        # Send message
-        await websocket.send(json.dumps({
-            "type": "chat",
-            "message": "Show me luxury experiences in Goa"
-        }))
-        
-        # Receive response
-        response = await websocket.recv()
-        print(json.loads(response))
-
-asyncio.run(test_chat())
-```
-
-### Using JavaScript (Browser)
-
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/chat/user_123');
-
-ws.onopen = () => {
-  console.log('Connected!');
-  
-  ws.send(JSON.stringify({
-    type: 'chat',
-    message: 'Looking for adventure experiences'
-  }));
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('Response:', data);
-};
-```
-
-## Embedding Model Info 🤖
-
-**all-MiniLM-L6-v2**:
-- **Size**: ~80MB
-- **Speed**: ~3000 sentences/sec on CPU
-- **Quality**: Excellent for semantic search
-- **Dimensions**: 384 (compact but effective)
-- **Cost**: 100% FREE (runs locally)
-- **Privacy**: Your data never leaves your server
-
-### Alternative Models
-
-If you want to try different models, edit `data_processor.py`:
-
-```python
-# For highest quality (slower):
-model_name="all-mpnet-base-v2"  # 420MB
-
-# For multilingual support:
-model_name="paraphrase-multilingual-MiniLM-L12-v2"
-
-# For smaller size:
-model_name="all-MiniLM-L12-v2"
-```
-
-## Memory System 💾
-
-### How It Works
-
-1. **Client Identification**: Each client gets a unique ID
-2. **Persistent Storage**: Conversations saved as pickle files
-3. **Automatic Loading**: Previous conversations loaded on reconnect
-4. **Profile Building**: System learns preferences over time
-
-### Stored Information
-
-- Full conversation history
-- User interests and preferences
-- Budget range mentions
-- Preferred locations
-- Previously discussed experiences
-- Conversation stage tracking
-
-### Memory Commands
-
-```json
-// Clear memory for fresh start
-{
-  "type": "clear_memory"
-}
-
-// Get conversation statistics
-{
-  "type": "get_stats"
-}
-```
-
-## Troubleshooting 🔧
-
-### Common Issues
-
-1. **Model Download Slow**
-   - First run downloads ~80MB model
-   - Check internet connection
-   - Model caches locally after first download
-
-2. **API Key Error**
-   - Ensure `GEMINI_API_KEY` is set in `.env`
-   - Get key from https://makersuite.google.com/app/apikey
-
-3. **CSV Not Found**
-   - Place `experiences_dataset_large.csv` in project root
-   - Check CSV has required columns: id, title, description, category, location, budget
-
-4. **ChromaDB Error**
-   - Delete `chroma_db/` folder
-   - Restart server to rebuild database
-
-5. **Memory Not Persisting**
-   - Check `conversation_memory/` folder exists
-   - Verify write permissions
-
-### Performance Notes
-
-- **First Run**: 1-2 minutes (model download + data loading)
-- **Subsequent Runs**: 5-10 seconds (cached model)
-- **Search Speed**: <100ms per query
-- **Memory Per User**: 1-5KB
-- **Supports**: 100+ concurrent connections
-
-## Cost Comparison 💰
-
-### Before (Google API Embeddings):
-- **Cost**: ~$0.01 per 1000 embeddings
-- **Speed**: 200ms per query (API latency)
-- **Limit**: API rate limits apply
-- **Privacy**: Data sent to Google
-
-### After (Sentence Transformers):
-- **Cost**: $0.00 (completely free!)
-- **Speed**: <10ms per query (local)
-- **Limit**: No limits!
-- **Privacy**: 100% local, no data leaves server
-
-## Advanced Configuration 🎛️
-
-Edit `data_processor.py` for advanced settings:
-
-```python
-# Configuration
-MAX_RESULTS = 3                    # Top recommendations to return
-MAX_CONVERSATION_HISTORY = 50      # Messages to keep in memory
-GEMINI_MODEL = "gemini-2.0-flash-exp"  # Chat model (not embeddings)
-```
-
-## Deployment 🌐
-
-### Production Considerations
-
-1. **Use production WSGI server**: Gunicorn + Uvicorn workers
-2. **Add authentication**: JWT tokens or API keys
-3. **Rate limiting**: Prevent abuse
-4. **Database backup**: Regularly backup `chroma_db/` and `conversation_memory/`
-5. **Monitoring**: Add logging and metrics
-6. **SSL/TLS**: Use secure WebSocket (wss://)
-
-### Docker Deployment (Optional)
-
-```dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-CMD ["python", "main.py"]
-```
-
-## Tech Stack 🛠️
-
-- **FastAPI**: Modern web framework
-- **Google Gemini**: AI chat responses
-- **Sentence Transformers**: Local embeddings
-- **ChromaDB**: Vector database
-- **WebSocket**: Real-time communication
-- **Pickle**: Conversation persistence
-
-## License 📄
-
-MIT License - Free to use and modify!
-
-## Support 💬
-
-For issues:
-1. Check logs for detailed error messages
-2. Verify all dependencies are installed
-3. Ensure Gemini API key is valid
-4. Review troubleshooting section above
+An intelligent chatbot that helps users discover and book personalized experiences using AI-powered recommendations, vector search, and conversation memory.
 
 ---
 
-**Built with ❤️ using FastAPI, Google Gemini, and Sentence Transformers**
+## 📋 Table of Contents
 
-**🎉 Now 100% free for embeddings!**
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Running the Application](#running-the-application)
+- [How It Works](#how-it-works)
+- [API Documentation](#api-documentation)
+- [File Descriptions](#file-descriptions)
+
+---
+
+## ✨ Features
+
+- **AI-Powered Recommendations**: Uses Google Gemini AI to understand user preferences
+- **Semantic Search**: ChromaDB vector database with sentence transformers for intelligent matching
+- **Conversation Memory**: Persistent memory across sessions for personalized interactions
+- **Real-time Chat**: WebSocket-based communication for instant responses
+- **Intent Detection**: Automatically detects user intent (greeting, experience request, casual chat)
+- **User Profiling**: Learns and remembers user interests, budget, and location preferences
+- **Database-Only Responses**: Only recommends verified experiences from the database
+
+---
+
+## 📁 Project Structure
+
+```
+ADENGAGE_CHABOT/
+│
+├── chroma_db/                          # Vector database storage (auto-created)
+├── conversation_memory/                # User conversation history (auto-created)
+├── __pycache__/                        # Python cache files
+├── .venv/                              # Virtual environment
+│
+├── chatbot.py                          # Main AI chatbot logic
+├── conversation_memory_manager.py      # Memory persistence handler
+├── data_processor.py                   # Data loading & vector DB setup
+├── main.py                             # FastAPI server & WebSocket endpoint
+├── websocket_manager.py                # WebSocket connection manager
+├── prompt.py                           # AI prompts and conversation templates
+│
+├── experiences_dataset_large.csv       # Experience data (required)
+├── chatbot_frontend.html               # Web UI for the chatbot
+│
+├── .env                                # Environment variables (create this)
+├── .gitignore                          # Git ignore file
+├── requirements.txt                    # Python dependencies
+└── README.md                           # This file
+```
+
+---
+
+## 🛠️ Technology Stack
+
+- **Backend**: Python 3.9+, FastAPI, Uvicorn
+- **AI Model**: Google Gemini 2.0 Flash
+- **Vector Database**: ChromaDB with Sentence Transformers
+- **Embeddings**: all-MiniLM-L6-v2 (local, no API key needed)
+- **Frontend**: HTML, JavaScript, WebSocket
+- **Memory**: Pickle-based persistent storage
+
+---
+
+## 📦 Prerequisites
+
+- Python 3.9 or higher
+- Google Gemini API Key ([Get it here](https://makersuite.google.com/app/apikey))
+- 2GB+ free disk space (for embeddings model)
+
+---
+
+## 🚀 Installation
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/vinaykumar231/RAG_chatbot.git
+cd adengage_chatbot
+```
+
+### Step 2: Create Virtual Environment
+
+```bash
+# Windows
+python -m venv .venv
+.venv\Scripts\activate
+
+# macOS/Linux
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### Step 3: Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+**requirements.txt:**
+```
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
+python-dotenv==1.0.0
+google-generativeai==0.3.1
+chromadb==0.4.18
+sentence-transformers==2.2.2
+pandas==2.1.3
+```
+
+### Step 4: Download Dataset
+
+Ensure `experiences_dataset_large.csv` is in the root directory with these columns:
+- `id` - Unique experience ID
+- `title` - Experience name
+- `description` - Detailed description
+- `category` - Experience category
+- `location` - City/region
+- `budget` - Price in INR
+
+---
+
+## ⚙️ Configuration
+
+### Create `.env` File
+
+Create a `.env` file in the root directory:
+
+```bash
+# Copy from template
+cp .env.example .env
+```
+
+**`.env` content:**
+```env
+# Google Gemini API Key (REQUIRED)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Database Configuration
+CHROMA_PERSIST_DIR=./chroma_db
+MEMORY_STORAGE_DIR=./conversation_memory
+
+# Data Configuration
+CSV_DATA_PATH=./experiences_dataset_large.csv
+
+# Model Configuration
+GEMINI_MODEL=gemini-2.0-flash-exp
+
+```
+
+**Get your Gemini API Key:**
+1. Visit https://makersuite.google.com/app/apikey
+2. Click "Create API Key"
+3. Copy and paste into `.env`
+
+---
+
+## 🎮 Running the Application
+
+### Step 1: Start the Backend Server
+
+```bash
+python main.py
+```
+
+You should see:
+```
+INFO:     Starting Sales Experience Chatbot Server...
+INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Initializing ChromaDB...
+INFO:     Loading Sentence Transformer model: all-MiniLM-L6-v2
+INFO:     Around 100 experiences in ChromaDB
+```
+
+### Step 2: Open the Frontend
+
+Open `chatbot_frontend.html` in your browser, or visit:
+```
+file:///path/to/adengage-chabot/chatbot_frontend.html
+```
+
+### Step 3: Start Chatting!
+
+The chatbot will automatically connect. Try:
+- "Hi, I'm looking for adventure activities"
+- "Show me romantic getaways in Andheri"
+- "Budget-friendly experiences in Mumbai"
+
+---
+
+## 🔍 How It Works
+
+### 1. **Data Initialization** (`data_processor.py`)
+```
+CSV → Pandas DataFrame → Text Embeddings → ChromaDB
+```
+- Loads `experiences_dataset_large.csv`
+- Generates semantic embeddings using Sentence Transformers
+- Stores in ChromaDB for fast similarity search
+
+### 2. **User Connection** (`websocket_manager.py`)
+```
+User → WebSocket → ConnectionManager → AI Instance
+```
+- Each user gets unique client ID
+- AI instance created with personal conversation memory
+- WebSocket maintains real-time connection
+
+### 3. **Message Processing** (`chatbot.py`)
+```
+User Message → Intent Detection → AI Response Generation
+```
+
+**Intent Flow:**
+```python
+User: "Show me adventures in Goa"
+  ↓
+Intent: "experience_request"
+  ↓
+Vector Search: ChromaDB finds matching experiences
+  ↓
+AI Generation: Gemini creates personalized response
+  ↓
+Response: "I found 3 great adventures in Goa..."
+```
+
+### 4. **Memory Management** (`conversation_memory_manager.py`)
+```
+Conversation → Pickle File → Load on Reconnect
+```
+- Stores conversation history per user
+- Remembers preferences (interests, budget, locations)
+- Tracks previously discussed experiences
+
+### 5. **Response Verification**
+```
+AI Response → Database Verification → Send to User
+```
+- AI can ONLY recommend experiences in database
+- All details verified against source data
+- Professional highlights generated from descriptions
+
+---
+
+## 📡 API Documentation
+
+### WebSocket Endpoint
+
+**URL:** `ws://localhost:8000/ws/chat/{client_id}`
+
+**Connect:**
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws/chat/user_123');
+```
+
+**Send Message:**
+```javascript
+ws.send(JSON.stringify({
+    type: "chat",
+    message: "Show me adventure activities"
+}));
+```
+
+**Receive Response:**
+```javascript
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log(data);
+};
+```
+
+### Message Types
+
+#### 1. User Message (Send)
+```json
+{
+    "type": "chat",
+    "message": "Looking for romantic getaways"
+}
+```
+
+#### 2. AI Response (Receive)
+```json
+{
+    "type": "response",
+    "message": "I found 3 romantic experiences...",
+    "experiences": {
+        "conversational_intro": "...",
+        "experiences": [...],
+        "conversational_closing": "..."
+    },
+    "timestamp": "2025-11-13T10:30:00"
+}
+```
+
+#### 3. Clear Memory (Send)
+```json
+{
+    "type": "clear_memory"
+}
+```
+
+#### 4. Get Stats (Send)
+```json
+{
+    "type": "get_stats"
+}
+```
+
+---
+
+## 📄 File Descriptions
+
+### Core Files
+
+| File | Purpose |
+|------|---------|
+| `chatbot.py` | Main AI logic, intent detection, response generation |
+| `data_processor.py` | CSV loading, ChromaDB setup, vector search |
+| `conversation_memory_manager.py` | Persistent memory storage and retrieval |
+| `main.py` | FastAPI server, WebSocket endpoint |
+| `websocket_manager.py` | Connection management, AI instance handling |
+| `prompt.py` | AI prompts, templates, intent keywords |
+| `chatbot_frontend.html` | User interface |
+
+### Data Files
+
+| File | Purpose |
+|------|---------|
+| `experiences_dataset_large.csv` | Experience database |
+| `chroma_db/` | Vector database storage |
+| `conversation_memory/` | User conversation histories |
+
+### Configuration
+
+| File | Purpose |
+|------|---------|
+| `.env` | Environment variables (API keys, paths) |
+| `requirements.txt` | Python dependencies |
+| `.gitignore` | Git exclusions |
+
+---
+
+## 🎯 Key Features Explained
+
+### 1. **Intent Detection**
+Automatically classifies user messages:
+- **Greeting**: "Hi", "Hello"
+- **Experience Request**: "Show me", "Looking for"
+- **Casual Chat**: General conversation
+- **Exit**: "Bye", "Thanks, that's all"
+
+### 2. **Semantic Search**
+Uses vector embeddings to find experiences:
+```python
+Query: "romantic beach getaway"
+  ↓
+Embedding: [0.23, -0.15, 0.89, ...]
+  ↓
+ChromaDB: Finds similar experiences
+  ↓
+Results: Beach Resort, Couples Spa, Sunset Cruise
+```
+
+### 3. **User Profiling**
+Learns from conversation:
+```python
+User: "Looking for adventure activities under ₹5000 in Goa"
+  ↓
+Extracted:
+  - interests: ["adventure"]
+  - budget: "₹5000"
+  - locations: ["goa"]
+```
+
+### 4. **Database Verification**
+Ensures accuracy:
+```python
+AI Response → Verify against database
+  ↓
+Match ID/Title/Budget → ✅ Send
+  ↓
+No Match → ❌ Use fallback
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Issue: "GEMINI_API_KEY not found"
+**Solution:** Create `.env` file with valid API key
+
+### Issue: ChromaDB initialization fails
+**Solution:** Delete `chroma_db/` folder and restart
+
+### Issue: WebSocket connection fails
+**Solution:** Check if port 8000 is available:
+```bash
+# Windows
+netstat -ano | findstr :8000
+
+# Linux/Mac
+lsof -i :8000
+```
+
+### Issue: No experiences found
+**Solution:** Verify `experiences_dataset_large.csv` exists and has data
+
+---
+
+## 📝 Example Conversation Flow
+
+```
+User: Hi there!
+Bot: Hi there! I'm here to help you discover amazing experiences. 
+     What kind of adventure are you thinking about?
+
+User: Show me romantic getaways in Goa under ₹10000
+Bot: Based on your interest in romantic experiences in Goa, I found: 
+     Beach Resort Stay, Couple's Spa Package, Sunset Dinner Cruise.
+     
+     [Displays 3 detailed experience cards]
+     
+     Which one interests you most?
+
+User: Tell me more about the beach resort
+Bot: [Provides detailed information about Beach Resort Stay]
+
+User: Thanks, I'll think about it
+Bot: You're welcome! Take your time. I'm here whenever you're ready!
+```
+
+---
+
+## 🔐 Security Notes
+
+- Never commit `.env` file to Git
+- Keep API keys confidential
+- Use environment variables for sensitive data
+- Validate all user inputs
+
+---
+
+## 📞 Support
+
+For issues or questions:
+- Check logs in terminal
+- Review `README.md`
+- Inspect browser console (F12)
+
+---

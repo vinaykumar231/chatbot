@@ -23,7 +23,7 @@ class ConversationMemory:
     def __init__(self, storage_dir: str = None):
         self.storage_dir = Path(storage_dir or MEMORY_STORAGE_DIR)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"💾 Conversation Memory initialized at {self.storage_dir}")
+        logger.info(f"Conversation Memory initialized at {self.storage_dir}")
     
     def get_memory_filepath(self, client_id: str) -> Path:
         """Get filepath for client's memory"""
@@ -46,10 +46,10 @@ class ConversationMemory:
             with open(memory_file, 'wb') as f:
                 pickle.dump(conversation_data, f)
             
-            logger.info(f"💾 Saved conversation memory for {client_id}")
+            logger.info(f"Saved conversation memory for {client_id}")
             
         except Exception as e:
-            logger.error(f"❌ Error saving memory for {client_id}: {e}")
+            logger.error(f" Error saving memory for {client_id}: {e}")
     
     def load_conversation(self, client_id: str) -> Dict:
         """Load conversation history for client"""
@@ -60,14 +60,14 @@ class ConversationMemory:
                 with open(memory_file, 'rb') as f:
                     conversation_data = pickle.load(f)
                 
-                logger.info(f"💾 Loaded conversation memory for {client_id}")
+                logger.info(f" Loaded conversation memory for {client_id}")
                 return conversation_data
             else:
                 # Return default structure for new client
                 return self._get_default_conversation_data()
                 
         except Exception as e:
-            logger.error(f"❌ Error loading memory for {client_id}: {e}")
+            logger.error(f"Error loading memory for {client_id}: {e}")
             # Return default on error
             return self._get_default_conversation_data()
     
@@ -98,7 +98,7 @@ class ConversationMemory:
                 memory_file.unlink()
                 logger.info(f"🗑️ Deleted conversation memory for {client_id}")
         except Exception as e:
-            logger.error(f"❌ Error deleting memory for {client_id}: {e}")
+            logger.error(f"Error deleting memory for {client_id}: {e}")
     
     def get_conversation_stats(self, client_id: str) -> Dict:
         """Get statistics about conversation history"""

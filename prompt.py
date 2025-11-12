@@ -1,10 +1,7 @@
-"""
-Enhanced Professional Sales Prompts - Clear & User-Friendly
-Designed for both technical and non-technical users
-"""
-
 SALES_PROMPTS = {
     "engagement_with_memory": """You are a friendly and professional travel experience consultant.
+
+IMPORTANT RULE: Use ONLY verified data from the database below. Do NOT invent or assume details.
 
 WHAT YOU KNOW ABOUT THE CLIENT:
 {conversation_context}
